@@ -4,9 +4,11 @@
   <meta charset="UTF-8">
   <title>GDP per Capita Over Time</title>
   <style>
-    body { font-family: Arial, sans-serif; margin: 40px; }
-    #chart-container { width: min(100%, 900px); margin: 0 auto; height: 420px; position: relative; }
-    #chart-container canvas { width: 100% !important; height: 100% !important; margin: 0 auto; display: block; }
+    body { font-family: Arial, sans-serif; margin: 40px; color: #222; }
+    #chart-container { width: min(100%, 1100px); margin: 0 auto; height: 480px; position: relative; }
+    #chart-container canvas { width: 100% !important; height: 100% !important; display: block; }
+    #assumptions { width: min(100%, 1100px); margin: 20px auto 0; padding: 12px 16px; background: #f4f6f9; border: 1px solid #d7dde5; border-radius: 6px; font-size: 0.95rem; }
+    #assumptions strong { font-weight: 600; }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
   <script src="data.js"></script>
@@ -16,8 +18,17 @@
   <div id="chart-container">
     <canvas id="populationChart" aria-label="GDP per capita line chart" role="img"></canvas>
   </div>
+  <div id="assumptions" aria-live="polite"></div>
 
   <script>
+    const annualGdpGrowth = 0.02;
+    const annualPopulationGrowth = 0.011;
+
+    const assumptionEl = document.getElementById('assumptions');
+    if (assumptionEl) {
+      assumptionEl.innerHTML = `<strong>Projection assumptions:</strong> Real GDP grows ${(annualGdpGrowth * 100).toFixed(1)}% per year and population grows ${(annualPopulationGrowth * 100).toFixed(1)}% per year from the last observed quarter through 2065.`;
+    }
+
     const records = window.populationData || window.data || [];
 
     if (!records.length) {
@@ -26,30 +37,99 @@
         '<p style="color:#b00;">No data found. Make sure data.js defines a global array named populationData (or adjust the script).</p>'
       );
     } else {
-      const quarters = records.map(item => item.quarter ?? item.quarters);
-      const gdpPerCapita = records.map(item => {
-        const gdpMillion = item.annualized_gdp_million ?? item.gdp_million ?? item.gdp;
-        const population = item.population_persons ?? item.population;
-        if (typeof gdpMillion !== 'number' || typeof population !== 'number' || population === 0) {
+      const historicalLabels = records.map(item => item.quarter ?? item.quarters);
+      const historicalGdpPerCapita = records.map(item => {
+        const gdpMillion = Number(item.annualized_gdp_million ?? item.gdp_million ?? item.gdp);
+        const population = Number(item.population_persons ?? item.population);
+        if (!Number.isFinite(gdpMillion) || !Number.isFinite(population) || population === 0) {
           return NaN;
         }
         return (gdpMillion * 1_000_000) / population;
       });
 
+      const lastRecord = records[records.length - 1];
+      const lastLabel = historicalLabels[historicalLabels.length - 1];
+      let currentGdpMillion = Number(lastRecord.annualized_gdp_million ?? lastRecord.gdp_million ?? lastRecord.gdp);
+      let currentPopulation = Number(lastRecord.population_persons ?? lastRecord.population);
+
+      const gdpQuarterlyGrowth = Math.pow(1 + annualGdpGrowth, 0.25) - 1;
+      const populationQuarterlyGrowth = Math.pow(1 + annualPopulationGrowth, 0.25) - 1;
+
+      const projectionLabels = [];
+      const projectionValues = [];
+
+      const nextQuarterLabel = (label) => {
+        const match = /^(\d{4})-Q([1-4])$/.exec(label);
+        if (!match) return label;
+        let year = Number(match[1]);
+        let quarter = Number(match[2]);
+        quarter += 1;
+        if (quarter > 4) {
+          quarter = 1;
+          year += 1;
+        }
+        return `${year}-Q${quarter}`;
+      };
+
+      const parseQuarter = (label) => {
+        const match = /^(\d{4})-Q([1-4])$/.exec(label);
+        if (!match) return null;
+        return { year: Number(match[1]), quarter: Number(match[2]) };
+      };
+
+      let nextLabel = nextQuarterLabel(lastLabel);
+      let cursor = parseQuarter(nextLabel);
+
+      while (cursor && (cursor.year < 2065 || (cursor.year === 2065 && cursor.quarter <= 4))) {
+        currentGdpMillion *= (1 + gdpQuarterlyGrowth);
+        currentPopulation *= (1 + populationQuarterlyGrowth);
+        const gdpPerCapita = (currentGdpMillion * 1_000_000) / currentPopulation;
+
+        projectionLabels.push(nextLabel);
+        projectionValues.push(gdpPerCapita);
+
+        if (cursor.year === 2065 && cursor.quarter === 4) {
+          break;
+        }
+        nextLabel = nextQuarterLabel(nextLabel);
+        cursor = parseQuarter(nextLabel);
+      }
+
+      const labels = historicalLabels.concat(projectionLabels);
+
+      const historicalSeries = historicalGdpPerCapita.concat(new Array(projectionLabels.length).fill(null));
+      const projectedSeries = new Array(historicalLabels.length - 1).fill(null);
+      projectedSeries.push(historicalGdpPerCapita[historicalGdpPerCapita.length - 1]);
+      projectionValues.forEach(value => projectedSeries.push(value));
+
       const ctx = document.getElementById('populationChart').getContext('2d');
       new Chart(ctx, {
         type: 'line',
         data: {
-          labels: quarters,
-          datasets: [{
-            label: 'GDP per Capita (AUD)',
-            data: gdpPerCapita,
-            borderColor: 'rgba(75, 192, 192, 1)',
-            backgroundColor: 'rgba(75, 192, 192, 0.15)',
-            tension: 0.3,
-            borderWidth: 2,
-            pointRadius: 0
-          }]
+          labels,
+          datasets: [
+            {
+              label: 'Historical GDP per Capita (AUD)',
+              data: historicalSeries,
+              borderColor: 'rgba(75, 192, 192, 1)',
+              backgroundColor: 'rgba(75, 192, 192, 0.15)',
+              tension: 0.3,
+              borderWidth: 2,
+              pointRadius: 0,
+              spanGaps: false
+            },
+            {
+              label: 'Projected GDP per Capita (AUD)',
+              data: projectedSeries,
+              borderColor: 'rgba(255, 99, 132, 1)',
+              backgroundColor: 'rgba(255, 99, 132, 0.1)',
+              tension: 0.3,
+              borderWidth: 2,
+              borderDash: [6, 4],
+              pointRadius: 0,
+              spanGaps: true
+            }
+          ]
         },
         options: {
           responsive: true,
@@ -76,7 +156,7 @@
                 minRotation: 90,
                 maxRotation: 90,
                 autoSkip: false,
-                maxTicksLimit: quarters.length,
+                maxTicksLimit: labels.length,
                 callback: function(value) {
                   const index = Number(value);
                   const label = this.getLabelForValue(value);
@@ -85,7 +165,7 @@
                   const year = match[1];
                   const quarter = match[2] || '';
                   if (!Number.isFinite(index)) return quarter === '1' ? year : '';
-                  if (index === 0 || index === quarters.length - 1) {
+                  if (index === 0 || index === labels.length - 1) {
                     return year;
                   }
                   return quarter === '1' ? year : '';
