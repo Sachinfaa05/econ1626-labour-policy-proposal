@@ -247,7 +247,7 @@
         <div class="hero-meta">
           <span><strong>Historical data:</strong> 1981 &ndash; 2024</span>
           <span><strong>Projection horizon:</strong> 2065</span>
-          <span><strong>Baseline:</strong> 2.0% GDP / 1.1% population</span>
+          <span><strong>Baseline:</strong> 2.1% GDP / 1.3% population</span>
         <p class="hero-credit">Created by Chris Berg, 2025 | <a href="https://chrisberg.org/" target="_blank" rel="noopener">website</a> | <a href="https://github.com/chrisberg000/economic-growth-projection" target="_blank" rel="noopener">Github</a></p>
         </div>
       </div>
@@ -271,7 +271,7 @@
               <div class="row">
                 <span>GDP growth</span>
                 <button type="button" data-action="decrease" aria-label="Decrease GDP growth">-</button>
-                <input type="number" id="gdpInput" class="growth-input" value="2.0" step="0.1" inputmode="decimal" aria-label="GDP growth (% per year)">
+                <input type="number" id="gdpInput" class="growth-input" value="2.1" step="0.1" inputmode="decimal" aria-label="GDP growth (% per year)">
                 <button type="button" data-action="increase" aria-label="Increase GDP growth">+</button>
                 <span>% per year</span>
               </div>
@@ -281,7 +281,7 @@
               <div class="row">
                 <span>Population growth</span>
                 <button type="button" data-action="decrease" aria-label="Decrease population growth">-</button>
-                <input type="number" id="populationInput" class="growth-input" value="1.1" step="0.1" inputmode="decimal" aria-label="Population growth (% per year)">
+                <input type="number" id="populationInput" class="growth-input" value="1.3" step="0.1" inputmode="decimal" aria-label="Population growth (% per year)">
                 <button type="button" data-action="increase" aria-label="Increase population growth">+</button>
                 <span>% per year</span>
               </div>
@@ -300,8 +300,8 @@
     const POP_MIN = 0.0;
     const POP_MAX = 0.05;
 
-    const BASELINE_GDP_GROWTH = 0.02;
-    const BASELINE_POP_GROWTH = 0.011;
+    const BASELINE_GDP_GROWTH = 0.021;
+    const BASELINE_POP_GROWTH = 0.013;
 
     let annualGdpGrowth = BASELINE_GDP_GROWTH;
     let annualPopulationGrowth = BASELINE_POP_GROWTH;
