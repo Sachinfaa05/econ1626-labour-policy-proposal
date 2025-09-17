@@ -7,7 +7,17 @@
     body { font-family: Arial, sans-serif; margin: 40px; color: #222; }
     #chart-container { width: min(100%, 1100px); margin: 0 auto; height: 480px; position: relative; }
     #chart-container canvas { width: 100% !important; height: 100% !important; display: block; }
-    #assumptions { width: min(100%, 1100px); margin: 20px auto 0; padding: 12px 16px; background: #f4f6f9; border: 1px solid #d7dde5; border-radius: 6px; font-size: 0.95rem; }
+    #controls { width: min(100%, 1100px); margin: 20px auto 0; display: flex; flex-wrap: wrap; gap: 16px; justify-content: center; }
+    #controls .control { background: #f4f6f9; border: 1px solid #d7dde5; border-radius: 6px; padding: 12px 16px; display: flex; flex-direction: column; align-items: center; gap: 6px; font-size: 0.95rem; min-width: 240px; }
+    #controls .control .row { display: flex; align-items: center; gap: 8px; }
+    #controls button { width: 30px; height: 30px; border-radius: 4px; border: 1px solid #9aa5b5; background: #fff; color: #223; cursor: pointer; font-weight: 600; line-height: 1; }
+    #controls button:hover { background: #e8eef7; }
+    #controls button:active { background: #dbe3f1; }
+    .growth-input { width: 72px; padding: 4px 6px; border: 1px solid #9aa5b5; border-radius: 4px; text-align: center; font-size: 0.95rem; font-feature-settings: 'tnum'; font-variant-numeric: tabular-nums; }
+    .growth-input:focus { outline: 2px solid #7ba4e8; }
+    .error { color: #b00; font-size: 0.82rem; min-height: 1.2em; text-align: center; }
+    .error:empty { visibility: hidden; }
+    #assumptions { width: min(100%, 1100px); margin: 12px auto 0; padding: 12px 16px; background: #f4f6f9; border: 1px solid #d7dde5; border-radius: 6px; font-size: 0.95rem; }
     #assumptions strong { font-weight: 600; }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
@@ -18,64 +28,113 @@
   <div id="chart-container">
     <canvas id="populationChart" aria-label="GDP per capita line chart" role="img"></canvas>
   </div>
+  <div id="controls" aria-live="polite">
+    <div class="control" data-target="gdp">
+      <div class="row">
+        <span>GDP growth</span>
+        <button type="button" data-action="decrease" aria-label="Decrease GDP growth">-</button>
+        <input type="number" id="gdpInput" class="growth-input" value="2.0" step="0.1" inputmode="decimal" aria-label="GDP growth (% per year)">
+        <button type="button" data-action="increase" aria-label="Increase GDP growth">+</button>
+        <span>% per year</span>
+      </div>
+      <div class="error" id="gdpError" role="status" aria-live="polite"></div>
+    </div>
+    <div class="control" data-target="population">
+      <div class="row">
+        <span>Population growth</span>
+        <button type="button" data-action="decrease" aria-label="Decrease population growth">-</button>
+        <input type="number" id="populationInput" class="growth-input" value="1.1" step="0.1" inputmode="decimal" aria-label="Population growth (% per year)">
+        <button type="button" data-action="increase" aria-label="Increase population growth">+</button>
+        <span>% per year</span>
+      </div>
+      <div class="error" id="populationError" role="status" aria-live="polite"></div>
+    </div>
+  </div>
   <div id="assumptions" aria-live="polite"></div>
 
   <script>
-    const annualGdpGrowth = 0.02;
-    const annualPopulationGrowth = 0.011;
+    const STEP = 0.001; // 0.1 percentage point in decimal form
+    const GDP_MIN = -0.02;
+    const GDP_MAX = 0.10;
+    const POP_MIN = 0.0;
+    const POP_MAX = 0.05;
 
-    const assumptionEl = document.getElementById('assumptions');
-    if (assumptionEl) {
-      assumptionEl.innerHTML = `<strong>Projection assumptions:</strong> Real GDP grows ${(annualGdpGrowth * 100).toFixed(1)}% per year and population grows ${(annualPopulationGrowth * 100).toFixed(1)}% per year from the last observed quarter through 2065.`;
-    }
+    const BASELINE_GDP_GROWTH = 0.02;
+    const BASELINE_POP_GROWTH = 0.011;
+
+    let annualGdpGrowth = BASELINE_GDP_GROWTH;
+    let annualPopulationGrowth = BASELINE_POP_GROWTH;
 
     const records = window.populationData || window.data || [];
+    const assumptionEl = document.getElementById('assumptions');
+    const gdpInputEl = document.getElementById('gdpInput');
+    const populationInputEl = document.getElementById('populationInput');
+    const gdpErrorEl = document.getElementById('gdpError');
+    const populationErrorEl = document.getElementById('populationError');
 
-    if (!records.length) {
-      document.body.insertAdjacentHTML(
-        'beforeend',
-        '<p style="color:#b00;">No data found. Make sure data.js defines a global array named populationData (or adjust the script).</p>'
-      );
-    } else {
-      const historicalLabels = records.map(item => item.quarter ?? item.quarters);
-      const historicalGdpPerCapita = records.map(item => {
-        const gdpMillion = Number(item.annualized_gdp_million ?? item.gdp_million ?? item.gdp);
-        const population = Number(item.population_persons ?? item.population);
-        if (!Number.isFinite(gdpMillion) || !Number.isFinite(population) || population === 0) {
-          return NaN;
-        }
-        return (gdpMillion * 1_000_000) / population;
-      });
+    const historicalLabels = records.map(item => item.quarter ?? item.quarters);
+    const historicalGdpPerCapita = records.map(item => {
+      const gdpMillion = Number(item.annualized_gdp_million ?? item.gdp_million ?? item.gdp);
+      const population = Number(item.population_persons ?? item.population);
+      if (!Number.isFinite(gdpMillion) || !Number.isFinite(population) || population === 0) {
+        return NaN;
+      }
+      return (gdpMillion * 1_000_000) / population;
+    });
+
+    const nextQuarterLabel = (label) => {
+      const match = /^(\d{4})-Q([1-4])$/.exec(label);
+      if (!match) return label;
+      let year = Number(match[1]);
+      let quarter = Number(match[2]);
+      quarter += 1;
+      if (quarter > 4) {
+        quarter = 1;
+        year += 1;
+      }
+      return `${year}-Q${quarter}`;
+    };
+
+    const parseQuarter = (label) => {
+      const match = /^(\d{4})-Q([1-4])$/.exec(label);
+      if (!match) return null;
+      return { year: Number(match[1]), quarter: Number(match[2]) };
+    };
+
+    let chart;
+
+    const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
+    const formatPercent = (value) => (value * 100).toFixed(1);
+
+    function setError(type, message) {
+      const el = type === 'gdp' ? gdpErrorEl : populationErrorEl;
+      if (!el) return;
+      el.textContent = message;
+    }
+
+    function updateAssumptionsText() {
+      if (assumptionEl) {
+        assumptionEl.innerHTML = `<strong>Projection assumptions:</strong> Real GDP grows ${formatPercent(annualGdpGrowth)}% per year and population grows ${formatPercent(annualPopulationGrowth)}% per year from the last observed quarter through 2065.`;
+      }
+      if (gdpInputEl) gdpInputEl.value = formatPercent(annualGdpGrowth);
+      if (populationInputEl) populationInputEl.value = formatPercent(annualPopulationGrowth);
+    }
+
+    function computeProjectionSeries(gdpGrowth, populationGrowth) {
+      if (!records.length) {
+        return { labels: historicalLabels, series: [] };
+      }
 
       const lastRecord = records[records.length - 1];
       const lastLabel = historicalLabels[historicalLabels.length - 1];
       let currentGdpMillion = Number(lastRecord.annualized_gdp_million ?? lastRecord.gdp_million ?? lastRecord.gdp);
       let currentPopulation = Number(lastRecord.population_persons ?? lastRecord.population);
 
-      const gdpQuarterlyGrowth = Math.pow(1 + annualGdpGrowth, 0.25) - 1;
-      const populationQuarterlyGrowth = Math.pow(1 + annualPopulationGrowth, 0.25) - 1;
+      const gdpQuarterlyGrowth = Math.pow(1 + gdpGrowth, 0.25) - 1;
+      const populationQuarterlyGrowth = Math.pow(1 + populationGrowth, 0.25) - 1;
 
       const projectionLabels = [];
       const projectionValues = [];
-
-      const nextQuarterLabel = (label) => {
-        const match = /^(\d{4})-Q([1-4])$/.exec(label);
-        if (!match) return label;
-        let year = Number(match[1]);
-        let quarter = Number(match[2]);
-        quarter += 1;
-        if (quarter > 4) {
-          quarter = 1;
-          year += 1;
-        }
-        return `${year}-Q${quarter}`;
-      };
-
-      const parseQuarter = (label) => {
-        const match = /^(\d{4})-Q([1-4])$/.exec(label);
-        if (!match) return null;
-        return { year: Number(match[1]), quarter: Number(match[2]) };
-      };
 
       let nextLabel = nextQuarterLabel(lastLabel);
       let cursor = parseQuarter(nextLabel);
@@ -95,15 +154,63 @@
         cursor = parseQuarter(nextLabel);
       }
 
-      const labels = historicalLabels.concat(projectionLabels);
+      return {
+        labels: historicalLabels.concat(projectionLabels),
+        projectionValues
+      };
+    }
 
-      const historicalSeries = historicalGdpPerCapita.concat(new Array(projectionLabels.length).fill(null));
+    function buildSeries() {
+      const baseline = computeProjectionSeries(BASELINE_GDP_GROWTH, BASELINE_POP_GROWTH);
+      const custom = computeProjectionSeries(annualGdpGrowth, annualPopulationGrowth);
+
+      const maxLabels = baseline.labels.length >= custom.labels.length ? baseline.labels : custom.labels;
+
+      const historicalSeries = historicalGdpPerCapita.concat(new Array(maxLabels.length - historicalLabels.length).fill(null));
+
+      const baselineSeries = new Array(historicalLabels.length - 1).fill(null);
+      baselineSeries.push(historicalGdpPerCapita[historicalGdpPerCapita.length - 1]);
+      baseline.projectionValues.forEach(value => baselineSeries.push(value));
+      while (baselineSeries.length < maxLabels.length) baselineSeries.push(null);
+
       const projectedSeries = new Array(historicalLabels.length - 1).fill(null);
       projectedSeries.push(historicalGdpPerCapita[historicalGdpPerCapita.length - 1]);
-      projectionValues.forEach(value => projectedSeries.push(value));
+      custom.projectionValues.forEach(value => projectedSeries.push(value));
+      while (projectedSeries.length < maxLabels.length) projectedSeries.push(null);
+
+      return {
+        labels: maxLabels,
+        historicalSeries,
+        baselineSeries,
+        projectedSeries
+      };
+    }
+
+    function renderChart() {
+      if (!records.length) {
+        document.body.insertAdjacentHTML(
+          'beforeend',
+          '<p style="color:#b00;">No data found. Make sure data.js defines a global array named populationData (or adjust the script).</p>'
+        );
+        return;
+      }
+
+      const { labels, historicalSeries, baselineSeries, projectedSeries } = buildSeries();
+      updateAssumptionsText();
 
       const ctx = document.getElementById('populationChart').getContext('2d');
-      new Chart(ctx, {
+
+      if (chart) {
+        chart.data.labels = labels;
+        chart.data.datasets[0].data = historicalSeries;
+        chart.data.datasets[1].data = baselineSeries;
+        chart.data.datasets[2].data = projectedSeries;
+        chart.options.scales.x.ticks.maxTicksLimit = labels.length;
+        chart.update();
+        return;
+      }
+
+      chart = new Chart(ctx, {
         type: 'line',
         data: {
           labels,
@@ -119,7 +226,18 @@
               spanGaps: false
             },
             {
-              label: 'Projected GDP per Capita (AUD)',
+              label: 'Baseline projection (2.0% GDP, 1.1% population)',
+              data: baselineSeries,
+              borderColor: 'rgba(90, 90, 90, 1)',
+              backgroundColor: 'rgba(90, 90, 90, 0.08)',
+              tension: 0.3,
+              borderWidth: 2,
+              borderDash: [4, 4],
+              pointRadius: 0,
+              spanGaps: true
+            },
+            {
+              label: 'Adjusted projection (AUD)',
               data: projectedSeries,
               borderColor: 'rgba(255, 99, 132, 1)',
               backgroundColor: 'rgba(255, 99, 132, 0.1)',
@@ -156,23 +274,25 @@
                 minRotation: 90,
                 maxRotation: 90,
                 autoSkip: false,
-                maxTicksLimit: labels.length,
+                maxTicksLimit: Math.ceil(labels.length / 2),
                 callback: function(value) {
                   const index = Number(value);
                   const label = this.getLabelForValue(value);
                   const match = /^(\d{4})-?Q?([1-4])?/.exec(label);
                   if (!match) return '';
-                  const year = match[1];
+                  const year = Number(match[1]);
                   const quarter = match[2] || '';
                   if (!Number.isFinite(index)) return quarter === '1' ? year : '';
                   if (index === 0 || index === labels.length - 1) {
                     return year;
                   }
-                  return quarter === '1' ? year : '';
+                  return (quarter === '1' && year % 2 === 0) ? year : '';
                 }
-              }
+              },
+              grid: { display: false }
             },
             y: {
+              grid: { color: 'rgba(34, 34, 34, 0.12)' },
               ticks: {
                 callback: value => value.toLocaleString('en-AU', { style: 'currency', currency: 'AUD', maximumFractionDigits: 0 })
               },
@@ -182,6 +302,97 @@
         }
       });
     }
+
+    function adjustGrowth(type, direction) {
+      const delta = direction === 'increase' ? STEP : -STEP;
+      if (type === 'gdp') {
+        const nextValue = clamp(annualGdpGrowth + delta, GDP_MIN, GDP_MAX);
+        if (nextValue === annualGdpGrowth) {
+          setError('gdp', `GDP growth must stay between ${formatPercent(GDP_MIN)}% and ${formatPercent(GDP_MAX)}%.`);
+          return;
+        }
+        annualGdpGrowth = nextValue;
+        setError('gdp', '');
+      } else if (type === 'population') {
+        const nextValue = clamp(annualPopulationGrowth + delta, POP_MIN, POP_MAX);
+        if (nextValue === annualPopulationGrowth) {
+          setError('population', `Population growth must stay between ${formatPercent(POP_MIN)}% and ${formatPercent(POP_MAX)}%.`);
+          return;
+        }
+        annualPopulationGrowth = nextValue;
+        setError('population', '');
+      }
+      renderChart();
+    }
+
+    function handleInput(type, rawValue) {
+      const trimmed = (rawValue ?? '').toString().trim();
+      const inputEl = type === 'gdp' ? gdpInputEl : populationInputEl;
+      const limits = type === 'gdp' ? { min: GDP_MIN, max: GDP_MAX } : { min: POP_MIN, max: POP_MAX };
+      const label = type === 'gdp' ? 'GDP growth' : 'Population growth';
+
+      if (trimmed === '') {
+        setError(type, `${label} cannot be empty.`);
+        if (inputEl) inputEl.value = formatPercent(type === 'gdp' ? annualGdpGrowth : annualPopulationGrowth);
+        return;
+      }
+
+      const percentValue = Number(trimmed);
+      if (!Number.isFinite(percentValue)) {
+        setError(type, `${label} must be a number.`);
+        if (inputEl) inputEl.value = formatPercent(type === 'gdp' ? annualGdpGrowth : annualPopulationGrowth);
+        return;
+      }
+
+      const decimalValue = percentValue / 100;
+      const clampedValue = clamp(decimalValue, limits.min, limits.max);
+
+      if (decimalValue !== clampedValue) {
+        setError(type, `${label} must be between ${formatPercent(limits.min)}% and ${formatPercent(limits.max)}%.`);
+      } else {
+        setError(type, '');
+      }
+
+      if (type === 'gdp') {
+        annualGdpGrowth = clampedValue;
+      } else {
+        annualPopulationGrowth = clampedValue;
+      }
+
+      renderChart();
+    }
+
+    document.getElementById('controls').addEventListener('click', (event) => {
+      const target = event.target.closest('button');
+      if (!target) return;
+      const control = target.closest('.control');
+      const type = control?.dataset.target;
+      const direction = target.dataset.action;
+      if (!type || !direction) return;
+      adjustGrowth(type, direction);
+    });
+
+    gdpInputEl.addEventListener('change', () => handleInput('gdp', gdpInputEl.value));
+    gdpInputEl.addEventListener('blur', () => handleInput('gdp', gdpInputEl.value));
+    gdpInputEl.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        handleInput('gdp', gdpInputEl.value);
+        gdpInputEl.blur();
+      }
+    });
+
+    populationInputEl.addEventListener('change', () => handleInput('population', populationInputEl.value));
+    populationInputEl.addEventListener('blur', () => handleInput('population', populationInputEl.value));
+    populationInputEl.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        handleInput('population', populationInputEl.value);
+        populationInputEl.blur();
+      }
+    });
+
+    renderChart();
   </script>
 </body>
 </html>
