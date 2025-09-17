@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>GDP per Capita Over Time</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 40px; }
+    #chart-container { width: min(100%, 900px); margin: 0 auto; height: 420px; position: relative; }
+    #chart-container canvas { width: 100% !important; height: 100% !important; margin: 0 auto; display: block; }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+  <script src="data.js"></script>
+</head>
+<body>
+  <h1>GDP per Capita by Quarter</h1>
+  <div id="chart-container">
+    <canvas id="populationChart" aria-label="GDP per capita line chart" role="img"></canvas>
+  </div>
+
+  <script>
+    const records = window.populationData || window.data || [];
+
+    if (!records.length) {
+      document.body.insertAdjacentHTML(
+        'beforeend',
+        '<p style="color:#b00;">No data found. Make sure data.js defines a global array named populationData (or adjust the script).</p>'
+      );
+    } else {
+      const quarters = records.map(item => item.quarter ?? item.quarters);
+      const gdpPerCapita = records.map(item => {
+        const gdpMillion = item.annualized_gdp_million ?? item.gdp_million ?? item.gdp;
+        const population = item.population_persons ?? item.population;
+        if (typeof gdpMillion !== 'number' || typeof population !== 'number' || population === 0) {
+          return NaN;
+        }
+        return (gdpMillion * 1_000_000) / population;
+      });
+
+      const ctx = document.getElementById('populationChart').getContext('2d');
+      new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: quarters,
+          datasets: [{
+            label: 'GDP per Capita (AUD)',
+            data: gdpPerCapita,
+            borderColor: 'rgba(75, 192, 192, 1)',
+            backgroundColor: 'rgba(75, 192, 192, 0.15)',
+            tension: 0.3,
+            borderWidth: 2,
+            pointRadius: 0
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          animation: false,
+          responsiveAnimationDuration: 0,
+          animations: {
+            colors: false,
+            x: { duration: 0 },
+            y: { duration: 0 }
+          },
+          transitions: {
+            active: { animation: { duration: 0 } },
+            resize: { animation: { duration: 0 } }
+          },
+          plugins: {
+            legend: { display: true }
+          },
+          scales: {
+            x: {
+              ticks: {
+                color: '#555',
+                padding: 6,
+                minRotation: 90,
+                maxRotation: 90,
+                autoSkip: false,
+                maxTicksLimit: quarters.length,
+                callback: function(value) {
+                  const index = Number(value);
+                  const label = this.getLabelForValue(value);
+                  const match = /^(\d{4})-?Q?([1-4])?/.exec(label);
+                  if (!match) return '';
+                  const year = match[1];
+                  const quarter = match[2] || '';
+                  if (!Number.isFinite(index)) return quarter === '1' ? year : '';
+                  if (index === 0 || index === quarters.length - 1) {
+                    return year;
+                  }
+                  return quarter === '1' ? year : '';
+                }
+              }
+            },
+            y: {
+              ticks: {
+                callback: value => value.toLocaleString('en-AU', { style: 'currency', currency: 'AUD', maximumFractionDigits: 0 })
+              },
+              title: { display: true, text: 'GDP per Capita (AUD)' }
+            }
+          }
+        }
+      });
+    }
+  </script>
+</body>
+</html>
