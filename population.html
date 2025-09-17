@@ -2,55 +2,296 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>GDP per Capita Over Time</title>
+  <title>Australia's GDP per capita to 2065</title>
   <style>
-    body { font-family: Arial, sans-serif; margin: 40px; color: #222; }
-    #chart-container { width: min(100%, 1100px); margin: 0 auto; height: 480px; position: relative; }
-    #chart-container canvas { width: 100% !important; height: 100% !important; display: block; }
-    #controls { width: min(100%, 1100px); margin: 20px auto 0; display: flex; flex-wrap: wrap; gap: 16px; justify-content: center; }
-    #controls .control { background: #f4f6f9; border: 1px solid #d7dde5; border-radius: 6px; padding: 12px 16px; display: flex; flex-direction: column; align-items: center; gap: 6px; font-size: 0.95rem; min-width: 240px; }
-    #controls .control .row { display: flex; align-items: center; gap: 8px; }
-    #controls button { width: 30px; height: 30px; border-radius: 4px; border: 1px solid #9aa5b5; background: #fff; color: #223; cursor: pointer; font-weight: 600; line-height: 1; }
-    #controls button:hover { background: #e8eef7; }
-    #controls button:active { background: #dbe3f1; }
-    .growth-input { width: 72px; padding: 4px 6px; border: 1px solid #9aa5b5; border-radius: 4px; text-align: center; font-size: 0.95rem; font-feature-settings: 'tnum'; font-variant-numeric: tabular-nums; }
-    .growth-input:focus { outline: 2px solid #7ba4e8; }
-    .error { color: #b00; font-size: 0.82rem; min-height: 1.2em; text-align: center; }
-    .error:empty { visibility: hidden; }
-    #assumptions { width: min(100%, 1100px); margin: 12px auto 0; padding: 12px 16px; background: #f4f6f9; border: 1px solid #d7dde5; border-radius: 6px; font-size: 0.95rem; }
-    #assumptions strong { font-weight: 600; }
+    :root {
+      color-scheme: dark;
+      --bg-dusk: #050b1a;
+      --bg-panel: #0f172a;
+      --bg-elevated: #131f36;
+      --accent: #6ee7ff;
+      --accent-strong: #22d3ee;
+      --muted: #94a3b8;
+      --text: #f8fafc;
+      --text-soft: #cbd5f5;
+      --error: #f97373;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: 'Segoe UI', Roboto, sans-serif;
+      background: radial-gradient(circle at top, rgba(45, 105, 204, 0.55), transparent 55%), var(--bg-dusk);
+      color: var(--text);
+      display: flex;
+      justify-content: center;
+      padding: 48px 24px 64px;
+    }
+
+    .page {
+      width: min(1180px, 100%);
+      display: flex;
+      flex-direction: column;
+      gap: 32px;
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 320px;
+      gap: 24px;
+      padding: 32px 40px;
+      background: linear-gradient(135deg, rgba(40, 57, 101, 0.9), rgba(18, 33, 68, 0.9));
+      border: 1px solid rgba(110, 231, 255, 0.18);
+      border-radius: 20px;
+      box-shadow: 0 18px 45px rgba(12, 20, 36, 0.6);
+      overflow: hidden;
+    }
+
+    .hero-content h1 {
+      margin: 0 0 12px;
+      font-size: clamp(2rem, 3.2vw, 3rem);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .hero-content p {
+      margin: 0 0 20px;
+      max-width: 520px;
+      color: var(--text-soft);
+      line-height: 1.6;
+    }
+
+    .hero-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px 20px;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .hero-meta span {
+      display: inline-flex;
+      gap: 6px;
+      align-items: center;
+    }
+
+    .hero-credit {
+      margin-top: 24px;
+      color: var(--text-soft);
+      font-size: 0.9rem;
+    }
+
+    .hero-credit a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    .hero-credit a:hover {
+      text-decoration: underline;
+    }
+
+    .hero-visual {
+      border-radius: 16px;
+      background: radial-gradient(circle at top, rgba(110, 231, 255, 0.35), transparent 70%),
+                  linear-gradient(160deg, rgba(37, 99, 235, 0.55), rgba(129, 140, 248, 0.28));
+      border: 1px solid rgba(110, 231, 255, 0.2);
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 12px;
+    }
+
+    .hero-visual img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 14px;
+      filter: saturate(1.1);
+      box-shadow: 0 20px 45px rgba(5, 10, 20, 0.5);
+    }
+
+    .layout {
+      display: grid;
+      gap: 24px;
+    }
+
+    .deck {
+      display: grid;
+      gap: 24px;
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .card {
+      background: var(--bg-panel);
+      border: 1px solid rgba(148, 163, 184, 0.18);
+      border-radius: 18px;
+      padding: 28px;
+      box-shadow: 0 16px 40px rgba(8, 16, 32, 0.45);
+    }
+
+    .card h2 {
+      margin: 0 0 18px;
+      font-size: 1.3rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    #chart-container {
+      width: 100%;
+      height: 440px;
+      background: var(--bg-elevated);
+      border-radius: 16px;
+      border: 1px solid rgba(110, 231, 255, 0.15);
+      padding: 16px;
+    }
+
+    #chart-container canvas {
+      width: 100% !important;
+      height: 100% !important;
+      display: block;
+    }
+
+    #controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 18px;
+      justify-content: center;
+    }
+
+    #controls .control {
+      background: rgba(148, 163, 184, 0.08);
+      border: 1px solid rgba(110, 231, 255, 0.12);
+      border-radius: 12px;
+      padding: 16px;
+      min-width: 260px;
+      gap: 12px;
+    }
+
+    #controls .control .row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    #controls button {
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      border: 1px solid rgba(110, 231, 255, 0.4);
+      background: rgba(34, 197, 255, 0.12);
+      color: var(--accent);
+      cursor: pointer;
+      font-size: 1.1rem;
+      transition: background 0.2s ease, transform 0.15s ease;
+    }
+
+    #controls button:hover {
+      background: rgba(34, 211, 238, 0.25);
+    }
+
+    #controls button:active {
+      transform: translateY(1px) scale(0.98);
+      background: rgba(34, 211, 238, 0.32);
+    }
+
+    .growth-input {
+      width: 80px;
+      padding: 6px 8px;
+      border-radius: 10px;
+      border: 1px solid rgba(110, 231, 255, 0.3);
+      background: rgba(15, 23, 42, 0.7);
+      color: var(--text);
+      font-size: 0.95rem;
+      text-align: center;
+      font-feature-settings: 'tnum';
+    }
+
+    .growth-input:focus {
+      outline: 2px solid var(--accent-strong);
+      outline-offset: 2px;
+    }
+
+    .error {
+      color: var(--error);
+      min-height: 1.2em;
+      font-size: 0.82rem;
+      text-align: center;
+    }
+
+    
+    @media (max-width: 980px) {
+      .hero { grid-template-columns: 1fr; }
+      .hero-visual { min-height: 220px; }
+      #chart-container { height: 380px; }
+    }
+
+    @media (max-width: 640px) {
+      body { padding: 32px 16px 48px; }
+      .card { padding: 22px; }
+      #controls { justify-content: stretch; }
+      #controls .control { width: 100%; }
+    }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
   <script src="data.js"></script>
 </head>
 <body>
-  <h1>GDP per Capita by Quarter</h1>
-  <div id="chart-container">
-    <canvas id="populationChart" aria-label="GDP per capita line chart" role="img"></canvas>
-  </div>
-  <div id="controls" aria-live="polite">
-    <div class="control" data-target="gdp">
-      <div class="row">
-        <span>GDP growth</span>
-        <button type="button" data-action="decrease" aria-label="Decrease GDP growth">-</button>
-        <input type="number" id="gdpInput" class="growth-input" value="2.0" step="0.1" inputmode="decimal" aria-label="GDP growth (% per year)">
-        <button type="button" data-action="increase" aria-label="Increase GDP growth">+</button>
-        <span>% per year</span>
+  <div class="page">
+    <header class="hero">
+      <div class="hero-content">
+        <h1>Australia's GDP per capita to 2065</h1>
+        <div class="hero-meta">
+          <span><strong>Historical data:</strong> 1981 &ndash; 2024</span>
+          <span><strong>Projection horizon:</strong> 2065</span>
+          <span><strong>Baseline:</strong> 2.0% GDP / 1.1% population</span>
+        <p class="hero-credit">Created by Chris Berg, 2025 | <a href="https://chrisberg.org/" target="_blank" rel="noopener">website</a> | <a href="https://github.com/chrisberg000/economic-growth-projection" target="_blank" rel="noopener">Github</a></p>
+        </div>
       </div>
-      <div class="error" id="gdpError" role="status" aria-live="polite"></div>
-    </div>
-    <div class="control" data-target="population">
-      <div class="row">
-        <span>Population growth</span>
-        <button type="button" data-action="decrease" aria-label="Decrease population growth">-</button>
-        <input type="number" id="populationInput" class="growth-input" value="1.1" step="0.1" inputmode="decimal" aria-label="Population growth (% per year)">
-        <button type="button" data-action="increase" aria-label="Increase population growth">+</button>
-        <span>% per year</span>
+      <div class="hero-visual" aria-hidden="true">
+        <img src="banner.jpg" alt="Illustration of Australia's economic outlook" loading="lazy">
       </div>
-      <div class="error" id="populationError" role="status" aria-live="polite"></div>
-    </div>
+    </header>
+
+    <main class="layout">
+      <section class="deck">
+        <article class="card chart-card">
+          <h2>GDP per Capita (History &amp; Projections)</h2>
+          <div id="chart-container">
+            <canvas id="populationChart" aria-label="GDP per capita line chart" role="img"></canvas>
+          </div>
+        </article>
+        <article class="card controls-card">
+          <h2>Fine-tune the Projection</h2>
+          <div id="controls" aria-live="polite">
+            <div class="control" data-target="gdp">
+              <div class="row">
+                <span>GDP growth</span>
+                <button type="button" data-action="decrease" aria-label="Decrease GDP growth">-</button>
+                <input type="number" id="gdpInput" class="growth-input" value="2.0" step="0.1" inputmode="decimal" aria-label="GDP growth (% per year)">
+                <button type="button" data-action="increase" aria-label="Increase GDP growth">+</button>
+                <span>% per year</span>
+              </div>
+              <div class="error" id="gdpError" role="status" aria-live="polite"></div>
+            </div>
+            <div class="control" data-target="population">
+              <div class="row">
+                <span>Population growth</span>
+                <button type="button" data-action="decrease" aria-label="Decrease population growth">-</button>
+                <input type="number" id="populationInput" class="growth-input" value="1.1" step="0.1" inputmode="decimal" aria-label="Population growth (% per year)">
+                <button type="button" data-action="increase" aria-label="Increase population growth">+</button>
+                <span>% per year</span>
+              </div>
+              <div class="error" id="populationError" role="status" aria-live="polite"></div>
+            </div>
+          </div>
+        </article>
+      </section>
+    </main>
   </div>
-  <div id="assumptions" aria-live="polite"></div>
 
   <script>
     const STEP = 0.001; // 0.1 percentage point in decimal form
@@ -122,7 +363,7 @@
 
     function computeProjectionSeries(gdpGrowth, populationGrowth) {
       if (!records.length) {
-        return { labels: historicalLabels, series: [] };
+        return { labels: historicalLabels, projectionValues: [] };
       }
 
       const lastRecord = records[records.length - 1];
@@ -190,7 +431,7 @@
       if (!records.length) {
         document.body.insertAdjacentHTML(
           'beforeend',
-          '<p style="color:#b00;">No data found. Make sure data.js defines a global array named populationData (or adjust the script).</p>'
+          '<p style="color:#f97373;">No data found. Make sure data.js defines a global array named populationData (or adjust the script).</p>'
         );
         return;
       }
@@ -205,7 +446,7 @@
         chart.data.datasets[0].data = historicalSeries;
         chart.data.datasets[1].data = baselineSeries;
         chart.data.datasets[2].data = projectedSeries;
-        chart.options.scales.x.ticks.maxTicksLimit = labels.length;
+        chart.options.scales.x.ticks.maxTicksLimit = Math.ceil(labels.length / 2);
         chart.update();
         return;
       }
@@ -218,8 +459,8 @@
             {
               label: 'Historical GDP per Capita (AUD)',
               data: historicalSeries,
-              borderColor: 'rgba(75, 192, 192, 1)',
-              backgroundColor: 'rgba(75, 192, 192, 0.15)',
+              borderColor: 'rgba(110, 231, 255, 1)',
+              backgroundColor: 'rgba(110, 231, 255, 0.15)',
               tension: 0.3,
               borderWidth: 2,
               pointRadius: 0,
@@ -228,8 +469,8 @@
             {
               label: 'Baseline projection (2.0% GDP, 1.1% population)',
               data: baselineSeries,
-              borderColor: 'rgba(90, 90, 90, 1)',
-              backgroundColor: 'rgba(90, 90, 90, 0.08)',
+              borderColor: 'rgba(148, 163, 184, 0.95)',
+              backgroundColor: 'rgba(148, 163, 184, 0.08)',
               tension: 0.3,
               borderWidth: 2,
               borderDash: [4, 4],
@@ -239,8 +480,8 @@
             {
               label: 'Adjusted projection (AUD)',
               data: projectedSeries,
-              borderColor: 'rgba(255, 99, 132, 1)',
-              backgroundColor: 'rgba(255, 99, 132, 0.1)',
+              borderColor: 'rgba(244, 114, 182, 1)',
+              backgroundColor: 'rgba(244, 114, 182, 0.15)',
               tension: 0.3,
               borderWidth: 2,
               borderDash: [6, 4],
@@ -264,12 +505,15 @@
             resize: { animation: { duration: 0 } }
           },
           plugins: {
-            legend: { display: true }
+            legend: {
+              display: true,
+              labels: { color: '#e2e8f0' }
+            }
           },
           scales: {
             x: {
               ticks: {
-                color: '#555',
+                color: '#cbd5f5',
                 padding: 6,
                 minRotation: 90,
                 maxRotation: 90,
@@ -292,11 +536,12 @@
               grid: { display: false }
             },
             y: {
-              grid: { color: 'rgba(34, 34, 34, 0.12)' },
+              grid: { color: 'rgba(148, 163, 184, 0.18)' },
               ticks: {
+                color: '#cbd5f5',
                 callback: value => value.toLocaleString('en-AU', { style: 'currency', currency: 'AUD', maximumFractionDigits: 0 })
               },
-              title: { display: true, text: 'GDP per Capita (AUD)' }
+              title: { display: true, text: 'GDP per Capita (AUD)', color: '#cbd5f5' }
             }
           }
         }
