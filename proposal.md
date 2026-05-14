@@ -24,7 +24,7 @@ Inequality in adoption of Artificial Intelligence between firms is the fourth im
 
 The fifth impact of Gen AI on the workforce are inequity in the potential risk exposure of different groups of employees. Women, people living with a disability, First Nation peoples, older workers and workers who have lower digital access may be at different levels of risk depending upon their respective occupations and access to workforce development training (Jobs & Skills Australia, 2025). This means there will not be equal exposure to the opportunities from the evolution of Gen AI by employee group: there will be a small number of job types where higher concentrations of occupationally clustered employees will be at a higher risk due to there being gaps in access to digital technologies. Therefore, as part of any effective policy response to the evolution of Gen AI, equity should be included in addition to productivity.
 
-## Policy Options and Evaluation
+
 
 ## Policy Options and Evaluation
 
@@ -43,3 +43,22 @@ Implementation should begin by identifying occupations where entry-level tasks a
 The government should also provide temporary wage and mobility support for workers affected by AI disruption while expanding SME grants linked to worker training and human oversight. The Productivity Commission (2024) states that AI productivity gains are strongest when businesses combine technology adoption with workforce capability development. This means support should focus not only on purchasing AI tools, but also on helping workers adapt to changing tasks.
 
 Success should be measured through outcomes such as course completion, employment retention and wage recovery rather than enrolment numbers alone. A practical evaluation framework would help ensure public funding supports real labour-market adjustment and long-term workforce resilience.
+
+## Risks and Mitigations
+One risk is that training programs become too generic and disconnected from workplace needs. This can be reduced through industry partnerships and regular curriculum updates. Another risk is that firms use AI grants mainly to reduce labour costs rather than support workers. Requiring worker training and human oversight as funding conditions would help address this issue. Unequal access is also a concern, so support should prioritise low-income and regional workers.
+ 
+ ## Conclusion
+ Gen AI is reshaping labour markets by automating some tasks while increasing productivity in others. Australia’s challenge is to manage this transition fairly while still supporting innovation and growth. A combined package of AI training, wage support and responsible SME adoption grants would help workers adapt, strengthen entry-level career pathways and ensure productivity gains are shared more broadly.
+
+ ## References
+ 
+ Acemoglu, D. and Restrepo, P. 2019, ‘Automation and New Tasks: How Technology Displaces and Reinstates Labor’, *Journal of Economic Perspectives*, vol. 33, no. 2, pp. 3–30.
+ 
+ Brynjolfsson, E., Li, D. and Raymond, L.R. 2025, ‘Generative AI at Work’, *The Quarterly Journal of Economics*, vol. 140, no. 2, pp. 889–942.
+ 
+ International Labour Organization 2025, *Generative AI and Jobs: A Refined Global Index of Occupational Exposure*, ILO Working Paper 140, Geneva.
+ 
+ Jobs and Skills Australia 2025, *Our Gen AI Transition: Implications for Work and Skills*, Australian Government, Canberra.
+ 
+ Productivity Commission 2024, *Making the Most of the AI Opportunity: AI Uptake, Productivity, and the Role of Government*, Research Paper no. 1, Australian Government, Canberra.
+ 
