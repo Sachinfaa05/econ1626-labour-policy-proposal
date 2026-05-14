@@ -33,3 +33,13 @@ The first option is a National AI Transition Training Program for workers in ent
 The second option is wage insurance and mobility support for workers affected by AI disruption. This could provide temporary financial support while workers retrain or move into new roles. The main advantage is that it protects workers during transition and reduces financial pressure. However, it does not directly address long-term skill gaps unless combined with retraining programs.
 
 The third option is responsible AI adoption grants for SMEs. Businesses would receive support to adopt AI systems if they also provide worker training and maintain human oversight. This option could improve productivity and help smaller firms remain competitive. However, the program would require monitoring to ensure public funding is used responsibly.
+
+## Recommended Policy Package and Implementation Plan
+
+The recommended approach is a combined AI Labour Transition Package that includes training, wage support and responsible SME AI adoption grants. This approach is stronger than relying on a single policy because workers need new skills, businesses need support to adopt AI effectively, and displaced workers need short-term protection. A balanced package would help Australia improve productivity while reducing inequality and protecting entry-level career pathways.
+
+Implementation should begin by identifying occupations where entry-level tasks are highly exposed to Gen AI, particularly in administrative, customer-service and junior analytical roles. Jobs and Skills Australia (2025) argues that a targeted approach is important because the effects of AI will not be experienced equally across industries or worker groups. Early pilot programs should focus on AI literacy, digital communication and human-AI collaboration through TAFE and university partnerships.
+
+The government should also provide temporary wage and mobility support for workers affected by AI disruption while expanding SME grants linked to worker training and human oversight. The Productivity Commission (2024) states that AI productivity gains are strongest when businesses combine technology adoption with workforce capability development. This means support should focus not only on purchasing AI tools, but also on helping workers adapt to changing tasks.
+
+Success should be measured through outcomes such as course completion, employment retention and wage recovery rather than enrolment numbers alone. A practical evaluation framework would help ensure public funding supports real labour-market adjustment and long-term workforce resilience.
